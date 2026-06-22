@@ -1,12 +1,11 @@
-# PC_PMOS: Sister Study Analysis
+# PC_PMOS: Pooled Logistic Regression Analyses
 
 **Authors:** Yilda Macias
 **Status:** Under review / In preparation
 
 ### Data Access
-This analysis uses Sister Study data (NIEHS). 
-Data are not publicly available but can be requested through:
-https://sisterstudy.niehs.nih.gov/English/data-requests.htm
+These analyses use data from the Sister Study (NIEHS), the Mexican Teachers Cohort (INSP), the Generations Study (ICR), and the Cancer Prevention Study-3 (ACS). 
+Data are not publicly available but can be requested.
 
 ### Reproducibility
 All analytic code is provided. To reproduce:

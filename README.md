@@ -131,52 +131,73 @@ Complete-case exclusion not applied for time-varying covariates (BMI, smoking, a
 
 ## Cancer Prevention Study-3 (CPS-3)
 
-### Data source
-American Cancer Society CPS-3. Access via approved data request. Data freeze: 2020-12-31. Later survey waves not available due to missing cancer registry linkage available at time of analysis.
+**Data source:** American Cancer Society CPS-3. Access via approved data request.  
+**Data freeze:** 2020-12-31 (next registry update expected 2027)  
+**File:** `COHORTFINAL_SA_061626.Rda`  
+**Participant identifier:** `altID` (not documented in data dictionary; confirmed present in dataset)
 
-### Baseline
-
-2006-2013 (specific year may vary across participants). Participants who did not return a baseline survey are excluded (no exposure data, no defined start time).
-
-### Survey waves
-Three waves: REF (enrollment), 2015 (time-varying update), 2018 (time-varying update).
+### Survey wave structure
+- REF (enrollment, 2006-2013): analytic baseline; age = `AGEREF`
+- 2015 follow-up survey: first time-varying covariate update; age = `AGEREF + FAILPYRS_REF_15`
+- 2018 follow-up survey: second time-varying covariate update; age = `AGEREF + FAILPYRS_REF_15 + FAILPYRS_15_18`
+- Survey return is not required for cohort inclusion; proxy dates used for non-returnees in FAILPYRS variables
 
 ### Age reconstruction
-Wave ages reconstructed from person-years segments:
+All wave ages reconstructed from person-years segments. Approach confirmed correct by CPS-3 data team (Ellen Mitchell, June 2026):
+- `age_ref  = AGEREF`
 - `age_2015 = AGEREF + FAILPYRS_REF_15`
-- `age_2018 = AGEREF + FAILPYRS_REF_15 + FAILPYRS_15_18` (only for 2018 returnees)
+- `age_2018 = AGEREF + FAILPYRS_REF_15 + FAILPYRS_15_18` (2018 returnees only)
 - `age_stop = AGEREF + FAILPYRS_TOTAL`
 
-Approach confirmed with CPS-3 data team [pending confirmation : see email sent June 2026].
+Note: `FAILPYRS_15_18` and `FAILPYRS_18_ENDFU` are coded 0 (not NA) for participants who failed before those intervals -- reset to NA before age reconstruction (per Ellen Mitchell, June 2026). `SUR_2018` similarly reset to NA for participants who failed before 2018.
 
 ### Sample size
-- After excluding non-2015 returnees: update after run
-- After excluding pre-2015 failures: update after run
-- After covariate exclusions: update after run
-- Pancreatic cancer cases: update after run
+- Update after data cleaning run
 
 ### PMOS operationalization
-No REF-level PCOS variable available [pending confirmation from data team -- see email sent June 2026]. Prevalent PMOS at 2015 baseline defined as:
-- `PCOS15 == 2` (Yes, noting reverse coding: 1=No, 2=Yes)
-- AND `PCOS_AGE15 <= age_2015` (diagnosis before or at 2015 survey age)
-- AND `PCOS_AGE15 > 10` (plausibility check)
-
-Incident PMOS at 2018:
-- `PCOS18 == 2`
-- AND `PCOS_AGE18 > age_2015` (after baseline)
-- AND `PCOS_AGE18 <= age_2018`
-- AND `PCOS_AGE18 > 10`
-
-Note: `PCOS_AGE15` and `PCOS_AGE18` may include implausible values per data codebook.
+PCOS was not collected at REF enrollment (confirmed by Caroline Um, June 2026). Prevalent PMOS at REF baseline is derived retrospectively from reported diagnosis age at the 2015 or 2018 follow-up survey:
+- Prevalent at REF: `PCOS_AGE15 <= AGEREF` OR `PCOS_AGE18 <= AGEREF`, with plausibility check (diagnosis age > 10)
+- Incident at 2015: `PCOS_AGE15 > AGEREF` AND `PCOS_AGE15 <= age_2015`
+- Incident at 2018: `PCOS_AGE18 > age_2015` AND `PCOS_AGE18 <= age_2018`
+- PCOS coded 1=No, 2=Yes in source data (reverse of Sister Study)
+- Limitation: prevalent PMOS relies on recalled diagnosis age reported 5-15 years after the fact; documented as limitation in manuscript
 
 ### Menstrual cycle irregularity
-Defined using CYCLENGTH:
+Defined using `CYCLENGTH` at REF enrollment (fixed at baseline):
 - No: codes 1, 2, 3 (less than 32 days)
-- Yes: codes 0, 4, 5, 6 (too irregular, 32+ days)
+- Yes: codes 0, 4, 5, 6 (too irregular to estimate, 32+ days)
 - Missing: code 99
 
 ### Outcome
-`PANCCAN_FINAL`: final binary pancreatic cancer outcome including registry-verified cases and cancer death cases. Age at EOF derived as `age_stop = AGEREF + FAILPYRS_TOTAL`.
+`PANCCAN_FINAL`: final binary pancreatic cancer outcome including registry-verified cases and cancer death cases.
+
+**Censoring:** Participants are censored at death, loss to follow-up, or end of study (2020-12-31). Non-pancreatic cancer diagnosis is NOT a censoring event -- participants continue contributing person-time after other cancer diagnoses. Note: current `FAILPYRS_TOTAL` variable truncates at other cancer diagnoses; corrected follow-up time variable requested from data team (June 2026).
+
+### Key analytic decisions
+- Analytic baseline: REF enrollment survey (`AGEREF`)
+- `age_start = AGEREF` for all participants
+- `FAILPYRS_15_18` and `FAILPYRS_18_ENDFU` reset from 0 to NA for pre-interval failures
+- All 2015/2018 covariate updates gated on valid reconstructed wave age to prevent spurious covariate values for participants who failed before those waves
+- Diabetes: time-varying T2D binary; gestational and Type 1 excluded; once diabetic always diabetic
+- Cholesterol: time-varying direct binary per wave; once Yes always Yes
+- Physical activity: PA_REF comparability with PA15/PA18 pending data team confirmation (June 2026); all three waves included but flagged
+- Alcohol: formats incompatible across waves; REF uses never/former/current status; 2015 uses continuous FFQ drinks/day; 2018 uses ordinal 5-category. Harmonized to never/former/current/<1 drink/day/1+ drink/day where possible. For pooled analysis will simplify to never/former/current. Documented in analytic_decisions.md
+- Menarche: categorical only (7 categories); harmonized to binary (under 13 / 13 or older) for consistency with pooled analysis
+- Education: CPS-3 collapses HS grad with less than HS (codes 1-2 map to 0); 4-year and graduate degrees combined (code 4 maps to 3); documented in analytic_decisions.md
+- Race/ethnicity: Asian (4) and Other/Missing (5) collapsed to Other for harmonization with Sister Study
+- LOCF chains: REF -> 2015 -> 2018 for all time-varying covariates
+
+
+### Menstrual cycle irregularity
+Defined using `CYCLENGTH` at REF enrollment (fixed at baseline):
+- No: codes 1, 2, 3 (less than 32 days)
+- Yes: codes 0, 4, 5, 6 (too irregular to estimate, 32+ days)
+- Missing: code 99
+
+### Outcome
+`PANCCAN_FINAL`: final binary pancreatic cancer outcome including registry-verified cases and cancer death cases.
+
+**Censoring:** Participants are censored at death, loss to follow-up, or end of study (2020-12-31). Non-pancreatic cancer diagnosis is NOT a censoring event -- participants continue contributing person-time after other cancer diagnoses. Note: current `FAILPYRS_TOTAL` variable truncates at other cancer diagnoses; corrected follow-up time variable requested from data team (June 2026).
 
 ### Diabetes
 Wave-level T2D binary variables (`DIAB2_15`, `DIAB2_18`). Type 1 diabetes excluded. Gestational diabetes excluded. Pre-baseline T2D identified from `DIABETES_REF == 1 & DIABTYPE_REF == 2`.
@@ -197,13 +218,6 @@ Categorical only (MENARCHE_AGECAT, 7 categories). Harmonized to binary (under 13
 
 ### Education
 CPS-3 collapses HS grad with less than HS in a single category (codes 1-2 map to 0). 4-year and graduate degrees are combined (code 4 maps to 3). Two-level coding at top and bottom differs from SIS. Noted in harmonization documentation.
-
-### Open questions (pending data team response, June 2026)
-1. Was PCOS collected at the REF/enrollment survey?
-2. Is the 2018 survey the most recent wave within the 2020 data freeze, or does a 2021 wave exist?
-3. Is an updated data freeze (2023 or 2024) available given analysis is being conducted in 2026?
-4. Is the age reconstruction approach (`AGEREF + FAILPYRS_TOTAL`) correct?
-5. When was the REF/enrollment survey administered?
 
 
 

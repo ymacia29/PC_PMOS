@@ -1,6 +1,7 @@
 # PC_PMOS Analyses
 
 **Authors:** Yilda Macias, Katie O'Brien
+
 **Status:** Under review / In preparation
 
 ### Data Access
@@ -187,6 +188,17 @@ Defined using `CYCLENGTH` at REF enrollment (fixed at baseline):
 - Race/ethnicity: Asian (4) and Other/Missing (5) collapsed to Other for harmonization with Sister Study
 - LOCF chains: REF -> 2015 -> 2018 for all time-varying covariates
 
+Exposure-specific exclusion decisions (June 2026)
+PCOS was not captured at REF enrollment in CPS-3, meaning PMOS classification relied on follow-up survey return at 2015 or 2018. An initial analytic approach excluded participants who returned neither PCOS survey (n = 78,545) to ensure exposure classifiability. This exclusion was found to remove 116 of 237 total pancreatic cancer cases (49%), with outcome-related missingness likely driving the pattern (cases more likely to die or become too ill to return follow-up surveys -- fatal illness).
+Upon further review, all 78,545 excluded participants had complete CYCLENGTH data and could be fully classified on MCI without PCOS survey data. Additionally, no exposed pancreatic cancer cases were observed for PMOS or the combined PMOS-and-MCI exposure in CPS-3, making PMOS-specific models non-estimable regardless.
+Decision: The PCOS survey response exclusion and the pre-2015 case exclusion are not applied. All participants with valid AGEREF and follow-up time are retained. Exclusion criteria are exposure-specific:
+
+MCI models: no PCOS survey exclusion applied; all participants with valid CYCLENGTH retained
+PMOS or MCI models: same as MCI; PMOS component contributes no exposed cases in CPS-3
+PMOS models: not run; no exposed pancreatic cancer cases observed
+PMOS and MCI models: not run; no doubly-exposed pancreatic cancer cases observed
+
+Decision made in June 2026 and applies to CPS-3 only. *For MTC and GS, the same logic will be applied upon data receipt: PCOS survey exclusion will only be applied if PMOS models have sufficient exposed cases to estimate.*
 
 ### Menstrual cycle irregularity
 Defined using `CYCLENGTH` at REF enrollment (fixed at baseline):
